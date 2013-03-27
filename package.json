@@ -1,0 +1,20 @@
+{
+  "name": "ttcli",
+  "version": "0.0.0",
+  "description": "timetracking command line interface",
+  "main": "app.js",
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@github.com:mdahiemstra/ttcli.git"
+  },
+  "keywords": [
+    "timetracking",
+    "cli"
+  ],
+  "author": "Michel Hiemstra",
+  "license": "MIT",
+  "dependencies": {
+    "cli-color": "~0.2.2",
+    "cli-table": "~0.2.0"
+  }
+}
