@@ -30,9 +30,9 @@ const cli_summary_week = function() {
     });
 
     summary_table.push(
-        ['Speeleiland', '8h', '4h', '', '2h', '5h'],
-        ['NDC', '', '4h', '1h', '3h', '5h'],
-        ['Mary', '', '', '7h', '5h', ''],
+        ['Some Project', '8h', '4h', '', '2h', '5h'],
+        ['Another project', '', '4h', '1h', '3h', '5h'],
+        ['Just a project', '', '', '7h', '5h', ''],
         [clc.green.underline('Total'), '8h', '8h', '8h', '10h', '10h']
     );
 
