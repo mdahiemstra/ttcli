@@ -16,6 +16,8 @@
   "dependencies": {
     "cli-color": "~0.2.2",
     "cli-table": "~0.2.0",
-    "jaguardb": "~0.1.2"
+    "mongoose": "~3.6.1",
+    "underscore": "~1.4.4",
+    "moment": "~2.0.0"
   }
 }

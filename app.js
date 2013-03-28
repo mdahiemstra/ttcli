@@ -1,7 +1,9 @@
 const readline = require('readline'),
       clc = require('cli-color'),
-      JaguarDb = require('jaguarDb').JaguarDb,
-      db = new JaguarDb(),
+      table = require('cli-table'),
+      mongo = require('./db'),
+      moment = require('moment'),
+      _ = require('underscore'),
       rl = readline.createInterface(process.stdin, process.stdout);
 
 const error = clc.red.bold, warn = clc.yellow, notice = clc.blue;
@@ -23,9 +25,33 @@ function cli_help() {
     console.log(body);
 }
 
-function cli_summary() {
+function cli_summary(command) {
 
     const options = command.split(' ');
+
+    if (options[1] == 'day') {
+
+        var summary_table = new table({
+            head: ['Project', 'Hours', 'Message'],
+            colWidths: [15, 7, 15]
+        });
+
+        var hours_total = 0;
+
+        mongo.Log.find({created: {$gte: moment().subtract('days', 1), $lt: moment().add('days', 1)}}, function (err, docs) {
+
+            _.each(docs, function(record, index) {
+
+                hours_total += parseInt(record.time.replace(/[A-Za-z$-]/g, ""));
+
+                summary_table.push([record.project, record.time, record.message]);
+            });
+
+            console.log('You have logged %s hours today (%s)', clc.underline.yellow(hours_total), moment());
+
+            console.log(summary_table.toString());
+        });
+    }
 
     if (options[1] == 'week') {
 
@@ -45,24 +71,18 @@ function cli_summary() {
 
         console.log(summary_table.toString());
     } else {
+
         console.log('summary not ready');
     }
 }
 
 function cli_log(command) {
     const options = command.split(' ');
-    console.log(options);
 
-    db.connect('./db', function(err) {
-        if(err) {
-            console.log('DB error %s', err);
-            return;
-        }
+    var entry = new mongo.Log({ project: options[1], time: options[2], message: options[3] });
 
-        var data = {project: options[1], time: options[2], message: options[3]};
-        db.insert(data, function(err, insertedData) {
-            console.log(insertedData);
-        });
+    entry.save(function (err, fluffy) {
+        console.log('Logged %s to %s with message %s', clc.yellow(options[2]), clc.underline(options[1]), clc.italic(options[3]));
     });
 }
 
@@ -74,18 +94,21 @@ rl.on('line', function(line) {
         case 'close': case 'exit':
             cli_close();
         break;
-        case 'help':
-            cli_help();
-        break;
         default:
-            if (command == '')
+            if (command == '') {
                 console.log('Hi there! I did not receive any command from you? Type `%s` for a list of commands', notice('help'));
-            else if (command.indexOf('summary') != -1)
-                cli_summary_week(command);
-            else if (command.indexOf('log') != -1)
+            } else if (command.indexOf('summary') != -1) {
+                cli_summary(command);
+            } else if (command.indexOf('log') != -1) {
                 cli_log(command);
-            else
-                console.log('Say what? I might have heard `%s` but I don\'t know that command!\nType `%s` for a list of commands', warn(command), notice('help'));
+            } else {
+                // commands without arguments
+                if (typeof eval('cli_'+command) === 'function') {
+                    eval('cli_'+command+'()');
+                } else {
+                    console.log('Say what? I might have heard `%s` but I don\'t know that command!\nType `%s` for a list of commands', warn(command), notice('help'));
+                }
+            }
         break;
     }
 
