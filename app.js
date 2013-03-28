@@ -33,7 +33,8 @@ function cli_summary(command) {
 
         var summary_table = new table({
             head: ['Project', 'Hours', 'Message'],
-            colWidths: [15, 7, 15]
+            colWidths: [15, 7, 15],
+            style : {compact : true, 'padding-left' : 1}
         });
 
         var hours_total = 0;
@@ -103,9 +104,9 @@ rl.on('line', function(line) {
                 cli_log(command);
             } else {
                 // commands without arguments
-                if (typeof eval('cli_'+command) === 'function') {
+                try {
                     eval('cli_'+command+'()');
-                } else {
+                } catch (e) {
                     console.log('Say what? I might have heard `%s` but I don\'t know that command!\nType `%s` for a list of commands', warn(command), notice('help'));
                 }
             }
