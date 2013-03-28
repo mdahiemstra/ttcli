@@ -51,6 +51,7 @@ function cli_summary(command) {
             console.log('You have logged %s hours today (%s)', clc.underline.yellow(hours_total), moment());
 
             console.log(summary_table.toString());
+            rl.prompt();
         });
     }
 
@@ -84,6 +85,7 @@ function cli_log(command) {
 
     entry.save(function (err, fluffy) {
         console.log('Logged %s to %s with message %s', clc.yellow(options[2]), clc.underline(options[1]), clc.italic(options[3]));
+        rl.prompt();
     });
 }
 
