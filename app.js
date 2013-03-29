@@ -31,7 +31,7 @@ function cli_summary(command) {
 
     if (period === 'day') {
         var summary_table = new table({
-            head: ['Project', 'Hours', 'Message']
+            head: ['Project', 'Time', 'Message']
           , colWidths: [15, 7, 15]
           , style : {compact : true, 'padding-left' : 1}
         });
@@ -41,8 +41,10 @@ function cli_summary(command) {
         mongo.Log.find({created: {$gte: moment().subtract('days', 1), $lt: moment().add('days', 1)}}, function (err, docs) {
 
             _.each(docs, function(record, index) {
+                console.log(record);
                 hours_total += parseInt(record.time.replace(/[A-Za-z$-]/g, ""));
-                summary_table.push([record.project, record.time, record.message]);
+                var time = moment().hour(0).minute(0).seconds(record.time).format('HH:mm');
+                summary_table.push([record.project, time, record.message]);
             });
 
             console.log('You have logged %s hours today (%s)', clc.underline.yellow(hours_total), moment());
@@ -73,12 +75,29 @@ function cli_summary(command) {
 }
 
 function cli_log(command) {
-    const data = /log\s"(.*)"\sin\s(.*)\sfor\s(.*)/.exec(command).slice(1);
+    const data = /log\s"(.*)"\sin\s(.*)\sfor\s(.*)/.exec(command).slice(1)
 
-    var entry = new mongo.Log({ project: data[2], time: data[1], message: data[0] });
+    var log_project = data[2]
+      , log_time = data[1]
+      , log_message = data[0]
+      , seconds = 0;
+
+    var t = /^(\d+h)\s(\d+m)|^(\d+h)$|^(\d+m)$/.exec(log_time);
+
+    if (!t) {
+        console.log('Invalid time format, allowed format example: %s or %s', clc.yellow('1h'), clc.yellow('1h 30m'));
+        return;
+    }
+
+    if (t[1] || t[3])
+        seconds += (t[1] ? t[1] : t[3]).replace('h', '')*60*60;
+    if (t[2] || t[4])
+        seconds += (t[2] ? t[2] : t[4]).replace('m', '')*60;
+
+    var entry = new mongo.Log({ project: data[2], time: seconds, message: data[0] });
 
     entry.save(function (err, res) {
-        console.log('Logged %s to %s with message %s', clc.yellow(data[1]), clc.underline(data[2]), clc.italic(data[0]));
+        console.log('Logged %s to %s with message %s', clc.yellow(data[1]), clc.underline(data[2]), clc.bold(data[0]));
         rl.prompt();
     });
 }
