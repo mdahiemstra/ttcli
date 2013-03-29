@@ -1,7 +1,9 @@
-const mongoose = require('mongoose'),
-      _ = require('underscore');
+const mongoose = require('mongoose')
+    , _        = require('underscore')
+    , config   = require('./config');
 
-mongoose.connect('mongodb://localhost/ttcli');
+mongoose.connect('mongodb://'+config.mongo.hostname+'/'+config.mongo.database,
+                 config.mongo.username ? {user: config.mongo.username, pass: config.mongo.password} : false);
 
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
