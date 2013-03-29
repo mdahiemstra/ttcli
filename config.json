@@ -1,0 +1,11 @@
+{
+  "username": "mda",
+  "number_of_workdays": 5,
+  "hours_per_day": 8,
+  "mongo": {
+    "host": "localhost",
+    "username": false,
+    "password": false,
+    "database": "ttcli"
+  }
+}

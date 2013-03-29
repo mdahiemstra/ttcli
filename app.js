@@ -1,14 +1,15 @@
-const readline = require('readline'),
-      clc = require('cli-color'),
-      table = require('cli-table'),
-      mongo = require('./db'),
-      moment = require('moment'),
-      _ = require('underscore'),
-      rl = readline.createInterface(process.stdin, process.stdout);
+const readline = require('readline')
+    , clc      = require('cli-color')
+    , table    = require('cli-table')
+    , mongo    = require('./db')
+    , moment   = require('moment')
+    , _        = require('underscore')
+    , rl       = readline.createInterface(process.stdin, process.stdout)
+    , config   = require('./config');
 
-const error = clc.red.bold, warn = clc.yellow, notice = clc.blue;
+console.log(clc.yellow('Hi %s!'), config.username);
 
-rl.setPrompt('OHAI » ');
+rl.setPrompt('What? » ');
 rl.prompt();
 
 function cli_close() {
@@ -26,15 +27,13 @@ function cli_help() {
 }
 
 function cli_summary(command) {
+    const period = command.match(/^summary.(.*)$/).pop();
 
-    const options = command.split(' ');
-
-    if (options[1] == 'day') {
-
+    if (period === 'day') {
         var summary_table = new table({
-            head: ['Project', 'Hours', 'Message'],
-            colWidths: [15, 7, 15],
-            style : {compact : true, 'padding-left' : 1}
+            head: ['Project', 'Hours', 'Message']
+          , colWidths: [15, 7, 15]
+          , style : {compact : true, 'padding-left' : 1}
         });
 
         var hours_total = 0;
@@ -42,9 +41,7 @@ function cli_summary(command) {
         mongo.Log.find({created: {$gte: moment().subtract('days', 1), $lt: moment().add('days', 1)}}, function (err, docs) {
 
             _.each(docs, function(record, index) {
-
                 hours_total += parseInt(record.time.replace(/[A-Za-z$-]/g, ""));
-
                 summary_table.push([record.project, record.time, record.message]);
             });
 
@@ -53,9 +50,7 @@ function cli_summary(command) {
             console.log(summary_table.toString());
             rl.prompt();
         });
-    }
-
-    if (options[1] == 'week') {
+    } else if (period === 'week') {
 
         var summary_table = new table({
             head: ['Project', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
@@ -73,24 +68,22 @@ function cli_summary(command) {
 
         console.log(summary_table.toString());
     } else {
-
-        console.log('summary not ready');
+        console.log('summary not available');
     }
 }
 
 function cli_log(command) {
-    const options = command.split(' ');
+    const data = /log\s"(.*)"\sin\s(.*)\sfor\s(.*)/.exec(command).slice(1);
 
-    var entry = new mongo.Log({ project: options[1], time: options[2], message: options[3] });
+    var entry = new mongo.Log({ project: data[2], time: data[1], message: data[0] });
 
-    entry.save(function (err, fluffy) {
-        console.log('Logged %s to %s with message %s', clc.yellow(options[2]), clc.underline(options[1]), clc.italic(options[3]));
+    entry.save(function (err, res) {
+        console.log('Logged %s to %s with message %s', clc.yellow(data[1]), clc.underline(data[2]), clc.italic(data[0]));
         rl.prompt();
     });
 }
 
 rl.on('line', function(line) {
-
     const command = line.trim();
 
     switch(command) {
@@ -99,17 +92,17 @@ rl.on('line', function(line) {
         break;
         default:
             if (command == '') {
-                console.log('Hi there! I did not receive any command from you? Type `%s` for a list of commands', notice('help'));
-            } else if (command.indexOf('summary') != -1) {
+                console.log('Hi there! I did not receive any command from you? Type `%s` for a list of commands', clc.blue('help'));
+            } else if (command.match(/^summary.(.*)$/)) {
                 cli_summary(command);
-            } else if (command.indexOf('log') != -1) {
+            } else if (command.match(/^log."(.*)".in.(.*).for.(.*)$/)) {
                 cli_log(command);
             } else {
                 // commands without arguments
                 try {
                     eval('cli_'+command+'()');
                 } catch (e) {
-                    console.log('Say what? I might have heard `%s` but I don\'t know that command!\nType `%s` for a list of commands', warn(command), notice('help'));
+                    console.log('Say what? I might have heard `%s` but I don\'t know that command!\nType `%s` for a list of commands', clc.yellow(command), clc.blue('help'));
                 }
             }
         break;
