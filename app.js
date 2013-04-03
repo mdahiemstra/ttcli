@@ -19,11 +19,21 @@ const CLI = {
     },
 
     help: function() {
-        var body = 'The commands below are availabe for usage of this time tracking interface.\n\n'
-                 + '    '+clc.underline('log')+' '+clc.blue('<project> <time> <message>')+' '+ clc.yellow('<date>')+'      log hours to a project, optionally you can specify a date\n'
-                 + '    '+clc.underline('summary')+' '+clc.blue('<period>')+'                           display a summary of hours this for period '+clc.bold('day/week/month/year')+'\n'
-                 + '    '+clc.underline('exit')+'                                       exit this application (alias close)'
+
+        var body = 'The command line time tracking interface was build for fun.\n'
+                 + 'The following commands are available at the moment:\n\n'
+                 + 'log "'+clc.bold('<message>')+'" in '+clc.bold('<time>')+' for '+clc.bold('<project>')+'    param '+clc.bold('-s')+' is optional, specifies to search for tickets in thirt-party software\n\n'
+                 + 'show log for '+clc.bold('<period>')+'                   generate logs (summaries)\n'
+                 + 'Available periods:\n'
+                 + '    today\n    this week\n    this month\n    this year\n    yesterday\n    last week\n'
+                 + 'e.g. to get a summary for yesterdays log entries type:\n'
+                 + '    show log for yesterday\n\n'
+                 + 'To display a summary for a date range you can use\n'
+                 + '    show log from '+clc.bold('<start>')+' to '+clc.bold('<end>')+'\n\n'
+                 + 'help                                    shows this help\n'
+                 + 'exit                                    close the cli (close also works)\n'
                  + '\n';
+
         console.log(body);
     },
 
