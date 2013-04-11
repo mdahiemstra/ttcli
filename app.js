@@ -4,8 +4,8 @@ const readline = require('readline')
     , mongo    = require('./db')
     , moment   = require('moment')
     , _        = require('underscore')
-    , rl       = readline.createInterface(process.stdin, process.stdout)
-    , config   = require('./config');
+    , config   = require('./config')
+    , rl       = readline.createInterface(process.stdin, process.stdout);
 
 console.log(clc.yellow('Hi %s!'), config.username);
 
@@ -13,30 +13,6 @@ rl.setPrompt('What? » ');
 rl.prompt();
 
 const CLI = {
-    close: function() {
-        console.log('Have a great day!');
-        process.exit(0);
-    },
-
-    help: function() {
-
-        var body = 'The command line time tracking interface was build for fun.\n'
-                 + 'The following commands are available at the moment:\n\n'
-                 + 'log "'+clc.bold('<message>')+'" in '+clc.bold('<time>')+' for '+clc.bold('<project>')+'    param '+clc.bold('-s')+' is optional, specifies to search for tickets in thirt-party software\n\n'
-                 + 'show log for '+clc.bold('<period>')+'                   generate logs (summaries)\n'
-                 + 'Available periods:\n'
-                 + '    today\n    this week\n    this month\n    this year\n    yesterday\n    last week\n'
-                 + 'e.g. to get a summary for yesterdays log entries type:\n'
-                 + '    show log for yesterday\n\n'
-                 + 'To display a summary for a date range you can use\n'
-                 + '    show log from '+clc.bold('<start>')+' to '+clc.bold('<end>')+'\n\n'
-                 + 'help                                    shows this help\n'
-                 + 'exit                                    close the cli (close also works)\n'
-                 + '\n';
-
-        console.log(body);
-    },
-
     log: function(command) {
         const data = /log\s"(.*)"\sin\s(.*)\sfor\s(.*)/.exec(command).slice(1)
 
@@ -66,9 +42,9 @@ const CLI = {
     },
 
     summary: function(command) {
-        const period = command.match(/^summary.(.*)$/).pop();
+        const period = command.match(/^show\slog\sfor\s(.*)$/).pop();
 
-        if (period === 'day') {
+        if (period === 'today') {
             var summary_table = new table({
                 head: [clc.green('Project'), clc.green('Time'), clc.green('Message')]
               , colWidths: [20, 7, 40]
@@ -92,26 +68,69 @@ const CLI = {
                 console.log(summary_table.toString());
                 rl.prompt();
             });
-        } else if (period === 'week') {
+        } else if (period === 'this week') {
 
             var summary_table = new table({
                 head: ['Project', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
-                colWidths: [15, 5, 5, 5, 5, 5]
+                colWidths: [15, 7, 7, 7, 7, 7]
             });
 
-            summary_table.push(
-                ['Some Project', '8h', '4h', '', '2h', '5h'],
-                ['Another project', '', '4h', '1h', '3h', '5h'],
-                ['Just a project', '', '', '7h', '5h', ''],
-                [clc.green.underline('Total'), '8h', '8h', '8h', '10h', '10h']
-            );
+            var total_time = 0;
+            var total_aday = [0,0,0,0,0];
 
-            console.log('You have logged %s hours of a %s week', clc.yellow('44h'), clc.yellow('40h'));
+            mongo.Log.find({created: {$gte: moment().startOf('week'), $lt: moment().endOf('week')}}, function (err, docs) {
 
-            console.log(summary_table.toString());
+                _.each(docs, function(record, index) {
+                    total_time += record.time;
+                    total_aday[moment(record.created).day()-1] += record.time;
+
+                    var time = moment().hour(0).minute(0).seconds(record.time).format('HH:mm');
+                    var log = [record.project, '', '', '', '', ''];
+                        log[moment(record.created).day()] = time;
+
+                    summary_table.push(log);
+                });
+
+                summary_table.push([clc.green.underline('Total')
+                                 , moment().hour(0).minute(0).seconds(total_aday[0]).format('HH:mm')
+                                 , moment().hour(0).minute(0).seconds(total_aday[1]).format('HH:mm')
+                                 , moment().hour(0).minute(0).seconds(total_aday[2]).format('HH:mm')
+                                 , moment().hour(0).minute(0).seconds(total_aday[3]).format('HH:mm')
+                                 , moment().hour(0).minute(0).seconds(total_aday[4]).format('HH:mm')]);
+
+                console.log('You have logged %s hours this week'
+                          , clc.underline.yellow(moment().hour(0).minute(0).seconds(total_time).format('HH:mm')));
+
+                console.log(summary_table.toString());
+                rl.prompt();
+            });
         } else {
             console.log('summary not available');
         }
+    },
+
+    close: function() {
+        console.log('Have a great day!');
+        process.exit(0);
+    },
+
+    help: function() {
+
+        var body = 'The command line time tracking interface was build for fun.\n'
+                 + 'The following commands are available at the moment:\n\n'
+                 + 'log "'+clc.blue('<message>')+'" in '+clc.blue('<time>')+' for '+clc.blue('<project>')+'    param '+clc.blue('-s')+' is optional, specifies to search for tickets in thirt-party software\n\n'
+                 + 'show log for '+clc.blue('<period>')+'                   generate logs (summaries)\n'
+                 + 'Available periods:\n'
+                 + '    today\n    this week\n    this month\n    this year\n    yesterday\n    last week\n'
+                 + 'e.g. to get a summary for yesterdays log entries type:\n'
+                 + '    show log for yesterday\n\n'
+                 + 'To display a summary for a date range you can use\n'
+                 + '    show log from '+clc.blue('<start>')+' to '+clc.blue('<end>')+'\n\n'
+                 + 'help                                    shows this help\n'
+                 + 'exit                                    close the cli (close also works)\n'
+                 + '\n';
+
+        console.log(body);
     }
 }
 
@@ -126,7 +145,7 @@ rl.on('line', function(line) {
             if (command == '') {
                 console.log('Hi there! I did not receive any command from you? Type `%s` for a list of commands', clc.blue('help'));
             }
-            else if (command.match(/^summary.(.*)$/)) {
+            else if (command.match(/^show\slog\sfor\s(.*)$/)) {
                 CLI.summary(command);
             }
             else if (command.match(/^log."(.*)".in.(.*).for.(.*)$/)) {
